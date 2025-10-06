@@ -1,29 +1,46 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// 🔧 FIXED: Remove /api from fallback URL
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+console.log('🔗 Using API_URL:', API_URL);
 
 const api = axios.create({
-  baseURL: '${API_URL}/api',
+  // 🔧 FIXED: Use backticks for template literal
+  baseURL: `${API_URL}/api`,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 30000,
 });
 
 // Request interceptor
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  // 🔧 FIXED: Use 'authToken' to match your LoginForm
+  const token = localStorage.getItem('authToken') || localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  
+  // Add debugging
+  console.log('📡 API Request:', config.method?.toUpperCase(), config.url);
+  console.log('📡 Full URL:', `${config.baseURL}${config.url}`);
+  
   return config;
 });
 
 // Response interceptor
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('✅ API Success:', response.status, response.config.url);
+    return response;
+  },
   (error) => {
+    console.error('❌ API Error:', error.response?.status, error.config?.url);
+    
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
+      localStorage.removeItem('authToken');
       localStorage.removeItem('user');
       window.location.reload();
     }
@@ -31,13 +48,17 @@ api.interceptors.response.use(
   }
 );
 
-// Auth API - matches your backend auth.js
+// Auth API - with register route added
 export const authAPI = {
   login: (username, password, isAdmin) =>
     api.post('/auth/login', { username, password, isAdmin }),
+    
+  // 🔧 ADDED: Missing register route
+  register: (username, password) =>
+    api.post('/auth/register', { username, password }),
 };
 
-// Threads API - matches your backend threads.js
+// Your existing threadsAPI and adminAPI (unchanged)
 export const threadsAPI = {
   getAll: () => api.get('/threads'),
   create: (data) => api.post('/threads', {
@@ -61,7 +82,6 @@ export const threadsAPI = {
   update: (id, data) => api.put(`/threads/${id}`, data),
 };
 
-// Admin API - matches your backend admin.js
 export const adminAPI = {
   getDashboard: (userId) => api.get(`/admin/dashboard?userId=${userId}`),
 };
