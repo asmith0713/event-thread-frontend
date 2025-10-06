@@ -5,13 +5,45 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 console.log('🔗 Using API_URL:', API_URL);
 
+const DEFAULT_TIMEOUT_MS = 60000;
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function requestWithRetry(requestFn, options = {}) {
+  const { retries = 2, baseDelayMs = 800 } = options;
+  let attempt = 0;
+  // Exponential backoff with jitter to survive cold starts
+  while (true) {
+    try {
+      return await requestFn();
+    } catch (error) {
+      const status = error.response?.status;
+      const isTimeout = error.code === 'ECONNABORTED' || error.message?.toLowerCase().includes('timeout');
+      const isNetwork = !error.response;
+      const isRetriableStatus = status >= 500 && status < 600;
+
+      const shouldRetry = attempt < retries && (isTimeout || isNetwork || isRetriableStatus);
+      if (!shouldRetry) throw error;
+
+      const delay = Math.min(baseDelayMs * Math.pow(2, attempt), 4000) + Math.floor(Math.random() * 200);
+      console.warn(`🔁 Retry attempt ${attempt + 1} after ${delay}ms due to`, {
+        status,
+        code: error.code,
+        url: error.config?.url,
+      });
+      await sleep(delay);
+      attempt += 1;
+    }
+  }
+}
+
 const api = axios.create({
   // 🔧 FIXED: Use backticks for template literal
   baseURL: `${API_URL}/api`,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000,
+  timeout: DEFAULT_TIMEOUT_MS,
 });
 
 // Request interceptor
@@ -51,11 +83,11 @@ api.interceptors.response.use(
 // Auth API - with register route added
 export const authAPI = {
   login: (username, password, isAdmin) =>
-    api.post('/auth/login', { username, password, isAdmin }),
+    requestWithRetry(() => api.post('/auth/login', { username, password, isAdmin })),
     
   // 🔧 ADDED: Missing register route
   register: (username, password) =>
-    api.post('/auth/register', { username, password }),
+    requestWithRetry(() => api.post('/auth/register', { username, password })),
 };
 
 // Your existing threadsAPI and adminAPI (unchanged)
