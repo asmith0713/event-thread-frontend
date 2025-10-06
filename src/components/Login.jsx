@@ -73,36 +73,22 @@ const LoginForm = ({ onLoginSuccess }) => {
     setSuccess('');
 
     try {
-      let response;
+      let data;
 
       if (isLogin) {
-        // Login request
-        response = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            username: formData.username.trim(),
-            password: formData.password,
-            isAdmin: false // Ensure isAdmin is always false
-          }),
-        });
+        const resp = await authAPI.login(
+          formData.username.trim(),
+          formData.password,
+          false
+        );
+        data = resp.data;
       } else {
-        // Register request
-        response = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            username: formData.username.trim(),
-            password: formData.password
-          }),
-        });
+        const resp = await authAPI.register(
+          formData.username.trim(),
+          formData.password
+        );
+        data = resp.data;
       }
-
-      const data = await response.json();
 
       if (data.success) {
         if (!isLogin) {
