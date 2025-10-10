@@ -6,6 +6,8 @@ import Header from './components/Header';
 import TabNavigation from './components/TabNavigation';
 import AdminDashboard from './components/AdminDashboard';
 import { threadsAPI } from './services/api';
+const __DEV__ = import.meta.env.DEV;
+const devError = (...args) => { if (__DEV__) console.error(...args); };
 import { socket } from './socket';
 
 // 🔧 MOVED ChatInput OUTSIDE App function to prevent re-creation
@@ -270,7 +272,7 @@ useEffect(() => {
         setCurrentUser(userData);
         setShowLoginForm(false);
       } catch (error) {
-        console.error('Error parsing saved user:', error);
+        devError('Error parsing saved user:', error);
         localStorage.removeItem('user');
       }
     }
@@ -368,6 +370,7 @@ useEffect(() => {
         requiresApproval: typeof thread.requiresApproval === 'boolean' ? thread.requiresApproval : true,
         expiresAt: thread.expiresAt,
         members: thread.members || [],
+        memberProfiles: thread.memberProfiles || [],
         pendingRequests: thread.pendingRequests || [],
         chat: thread.chat || [],
         createdAt: thread.createdAt,
@@ -403,7 +406,7 @@ useEffect(() => {
       }
     }
   } catch (error) {
-    console.error('Error loading threads:', error);
+    devError('Error loading threads:', error);
   } finally {
     setLoading(false);
     loadingRequestRef.current = false;
@@ -456,7 +459,7 @@ useEffect(() => {
         return { success: true };
       }
     } catch (error) {
-      console.error('Error creating thread:', error);
+      devError('Error creating thread:', error);
       return { success: false, error: error.message };
     }
   }, [currentUser, loadThreads]);
@@ -473,7 +476,7 @@ useEffect(() => {
         duration: 2000
       });
     } catch (error) {
-      console.error('Error handling join request:', error);
+      devError('Error handling join request:', error);
       setNotification({
         show: true,
         type: 'error',
@@ -496,7 +499,7 @@ useEffect(() => {
         duration: 2000
       });
     } catch (error) {
-      console.error('Error joining thread:', error);
+      devError('Error joining thread:', error);
       setNotification({
         show: true,
         type: 'error',
@@ -553,7 +556,7 @@ useEffect(() => {
             });
           }
         } catch (error) {
-          console.error('Error deleting thread:', error);
+          devError('Error deleting thread:', error);
           const errorMessage = error.response?.data?.message || 'Failed to delete thread.';
           setNotification({
             show: true,
@@ -587,6 +590,7 @@ useEffect(() => {
           requiresApproval: typeof t.requiresApproval === 'boolean' ? t.requiresApproval : true,
           expiresAt: t.expiresAt,
           members: t.members || [],
+          memberProfiles: t.memberProfiles || [{ userId: t.creatorId, username: t.creator }],
           pendingRequests: t.pendingRequests || [],
           chat: [],
           createdAt: t.createdAt,
@@ -652,8 +656,18 @@ const onJoinRequest = ({ threadId, userId, username }) => {
         } catch {}
       }
       // Update lists without full reload
-      setThreads(prev => prev.map(t => t.id === threadId ? { ...t, members: Array.from(new Set([...(t.members||[]), currentUser.id])) } : t));
-      setUserThreads(prev => prev.map(t => t.id === threadId ? { ...t, members: Array.from(new Set([...(t.members||[]), currentUser.id])) } : t));
+      setThreads(prev => prev.map(t => {
+        if (t.id !== threadId) return t;
+        const updatedMembers = Array.from(new Set([...(t.members || []), currentUser.id]));
+        const updatedProfiles = Array.from(new Map([...(t.memberProfiles || []).map(p => [p.userId, p]), [currentUser.id, { userId: currentUser.id, username: currentUser.username }]])).map(([,v]) => v);
+        return { ...t, members: updatedMembers, memberProfiles: updatedProfiles };
+      }));
+      setUserThreads(prev => prev.map(t => {
+        if (t.id !== threadId) return t;
+        const updatedMembers = Array.from(new Set([...(t.members || []), currentUser.id]));
+        const updatedProfiles = Array.from(new Map([...(t.memberProfiles || []).map(p => [p.userId, p]), [currentUser.id, { userId: currentUser.id, username: currentUser.username }]])).map(([,v]) => v);
+        return { ...t, members: updatedMembers, memberProfiles: updatedProfiles };
+      }));
       setNotification({
         show: true,
         type: approved ? 'success' : 'warning',
@@ -663,10 +677,30 @@ const onJoinRequest = ({ threadId, userId, username }) => {
     };
 
     const onMembershipChanged = ({ threadId, userId, username }) => {
-      setThreads(prev => prev.map(t => t.id === threadId ? { ...t, members: Array.from(new Set([...(t.members||[]), userId])) } : t));
-      setUserThreads(prev => prev.map(t => t.id === threadId ? { ...t, members: Array.from(new Set([...(t.members||[]), userId])) } : t));
+      setThreads(prev => prev.map(t => {
+        if (t.id !== threadId) return t;
+        const updatedMembers = Array.from(new Set([...(t.members || []), userId]));
+        const updatedProfiles = username
+          ? Array.from(new Map([...(t.memberProfiles || []).map(p => [p.userId, p]), [userId, { userId, username }]])).map(([,v]) => v)
+          : (t.memberProfiles || []);
+        return { ...t, members: updatedMembers, memberProfiles: updatedProfiles };
+      }));
+      setUserThreads(prev => prev.map(t => {
+        if (t.id !== threadId) return t;
+        const updatedMembers = Array.from(new Set([...(t.members || []), userId]));
+        const updatedProfiles = username
+          ? Array.from(new Map([...(t.memberProfiles || []).map(p => [p.userId, p]), [userId, { userId, username }]])).map(([,v]) => v)
+          : (t.memberProfiles || []);
+        return { ...t, members: updatedMembers, memberProfiles: updatedProfiles };
+      }));
       if (selectedThread?.id === threadId) {
-        setSelectedThread(prev => ({ ...prev, members: Array.from(new Set([...(prev.members||[]), userId])) }));
+        setSelectedThread(prev => {
+          const updatedMembers = Array.from(new Set([...(prev.members || []), userId]));
+          const updatedProfiles = username
+            ? Array.from(new Map([...(prev.memberProfiles || []).map(p => [p.userId, p]), [userId, { userId, username }]])).map(([,v]) => v)
+            : (prev.memberProfiles || []);
+          return { ...prev, members: updatedMembers, memberProfiles: updatedProfiles };
+        });
       }
       // Optional toast for creator/participants
       setNotification({ show: true, type: 'success', message: `${username || 'A user'} joined the thread`, duration: 2000 });
@@ -936,12 +970,26 @@ const onJoinRequest = ({ threadId, userId, username }) => {
                 thread.createdBy === currentUser?.id ||
                 (thread.members || []).some((m) => m === currentUser?.id);
 
-              // If open thread (no approval) and not yet a member, auto-join then open
+              // If open thread (no approval) and not yet a member, auto-join then open immediately
               if (!isMember && thread.requiresApproval === false) {
                 try {
-                  await handleJoinThread(thread.id);
+                  const resp = await handleJoinThread(thread.id);
+                  // Optimistically mark membership locally and unlock chat
+                  const joinedThread = {
+                    ...thread,
+                    members: Array.from(new Set([...(thread.members || []), currentUser.id])),
+                    memberProfiles: Array.from(new Map([...(thread.memberProfiles || []).map(p => [p.userId, p]), [currentUser.id, { userId: currentUser.id, username: currentUser.username }]])).map(([,v]) => v),
+                  };
+                  setSelectedThread(joinedThread);
+                  localStorage.setItem('selectedThread', JSON.stringify(joinedThread));
+                  setChatLocked(false);
+                  try {
+                    if (!socket.connected) socket.connect();
+                    socket.emit('joinThread', { threadId: thread.id, userId: currentUser.id });
+                  } catch {}
+                  return;
                 } catch (e) {
-                  // If auto-join fails, show a brief error but still avoid opening
+                  // If auto-join fails, show a brief error and avoid opening
                   setNotification({ show: true, type: 'error', message: 'Failed to join this thread.', duration: 2000 });
                   return;
                 }
@@ -1204,19 +1252,20 @@ const onJoinRequest = ({ threadId, userId, username }) => {
           <div className="p-4">
             <h3 className="font-medium text-gray-800 mb-3">Members</h3>
             <div className="space-y-2 max-h-40 overflow-y-auto">
-              {selectedThread.members.slice(0, 10).map((memberId, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center">
-                    <User className="w-3 h-3 text-gray-500" />
+              {selectedThread.members.slice(0, 10).map((memberId, index) => {
+                const profile = (selectedThread.memberProfiles || []).find(p => p.userId === memberId);
+                const displayName = memberId === selectedThread.createdBy
+                  ? `${selectedThread.createdByName} (Creator)`
+                  : (profile?.username || `User ${memberId.slice(-4)}`);
+                return (
+                  <div key={index} className="flex items-center gap-2">
+                    <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center">
+                      <User className="w-3 h-3 text-gray-500" />
+                    </div>
+                    <span className="text-sm text-gray-700">{displayName}</span>
                   </div>
-                  <span className="text-sm text-gray-700">
-                    {memberId === selectedThread.createdBy 
-                      ? `${selectedThread.createdByName} (Creator)` 
-                      : `User ${memberId.slice(-4)}`
-                    }
-                  </span>
-                </div>
-              ))}
+                );
+              })}
               {selectedThread.members.length > 10 && (
                 <div className="text-xs text-gray-500 text-center">
                   +{selectedThread.members.length - 10} more members

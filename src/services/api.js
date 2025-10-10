@@ -2,7 +2,11 @@ import axios from 'axios';
 
 // API base URL (env or localhost)
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
-console.log('Using API_URL:', API_URL);
+const __DEV__ = import.meta.env.DEV;
+if (__DEV__) {
+  // Only log in development
+  console.log('Using API_URL:', API_URL);
+}
 
 const api = axios.create({
   baseURL: `${API_URL}/api`,
@@ -20,19 +24,25 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  console.log('API Request:', config.method?.toUpperCase(), config.url);
-  console.log('Full URL:', `${config.baseURL}${config.url}`);
+  if (__DEV__) {
+    console.log('API Request:', config.method?.toUpperCase(), config.url);
+    console.log('Full URL:', `${config.baseURL}${config.url}`);
+  }
   return config;
 });
 
 // Response interceptor
 api.interceptors.response.use(
   (response) => {
-    console.log('API Success:', response.status, response.config.url);
+    if (__DEV__) {
+      console.log('API Success:', response.status, response.config.url);
+    }
     return response;
   },
   (error) => {
-    console.error('API Error:', error.response?.status, error.config?.url);
+    if (__DEV__) {
+      console.error('API Error:', error.response?.status, error.config?.url);
+    }
     if (error.response?.status === 401) {
       try { sessionStorage.removeItem('authToken'); sessionStorage.removeItem('user'); } catch {}
       try { localStorage.removeItem('token'); localStorage.removeItem('authToken'); localStorage.removeItem('user'); } catch {}

@@ -13,6 +13,8 @@ import {
   Hash
 } from 'lucide-react';
 import { adminAPI, threadsAPI } from '../services/api';
+const __DEV__ = import.meta.env.DEV;
+const devError = (...args) => { if (__DEV__) console.error(...args); };
 
 const AdminDashboard = ({ currentUser, onBack, onLogout }) => {
   const [dashboardData, setDashboardData] = useState(null);
@@ -32,7 +34,7 @@ const AdminDashboard = ({ currentUser, onBack, onLogout }) => {
         setDashboardData(response.data.data);
       }
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
+      devError('Error loading dashboard data:', error);
     } finally {
       setLoading(false);
     }
@@ -45,7 +47,7 @@ const AdminDashboard = ({ currentUser, onBack, onLogout }) => {
         await loadDashboardData();
         alert('Thread deleted successfully');
       } catch (error) {
-        console.error('Error deleting thread:', error);
+        devError('Error deleting thread:', error);
         alert('Failed to delete thread');
       }
     }
