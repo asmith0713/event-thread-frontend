@@ -365,6 +365,7 @@ useEffect(() => {
         createdByName: thread.creator,
         location: thread.location,
         tags: thread.tags || [],
+        requiresApproval: typeof thread.requiresApproval === 'boolean' ? thread.requiresApproval : true,
         expiresAt: thread.expiresAt,
         members: thread.members || [],
         pendingRequests: thread.pendingRequests || [],
@@ -484,13 +485,14 @@ useEffect(() => {
 
   const handleJoinThread = useCallback(async (threadId) => {
     try {
-      await threadsAPI.requestJoin(threadId, currentUser.id);
+      const resp = await threadsAPI.requestJoin(threadId, currentUser.id);
       await loadThreads();
 
+      const serverMsg = resp?.data?.message || 'Join request sent';
       setNotification({
         show: true,
         type: 'success',
-        message: 'Join request sent successfully',
+        message: serverMsg === 'Joined thread' ? 'Joined thread successfully' : 'Join request sent successfully',
         duration: 2000
       });
     } catch (error) {
@@ -582,6 +584,7 @@ useEffect(() => {
           createdByName: t.creator,
           location: t.location,
           tags: t.tags || [],
+          requiresApproval: typeof t.requiresApproval === 'boolean' ? t.requiresApproval : true,
           expiresAt: t.expiresAt,
           members: t.members || [],
           pendingRequests: t.pendingRequests || [],
@@ -824,7 +827,14 @@ const onJoinRequest = ({ threadId, userId, username }) => {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
         <div className="flex justify-between items-start mb-2">
-          <h3 className="font-semibold text-gray-800 flex-1">{thread.title}</h3>
+          <h3 className="font-semibold text-gray-800 flex-1 flex items-center gap-2">
+            {thread.title}
+            {thread.requiresApproval ? (
+              <span className="text-[10px] px-2 py-0.5 rounded-full border border-amber-200 bg-amber-100 text-amber-700 uppercase tracking-wide">Approval Required</span>
+            ) : (
+              <span className="text-[10px] px-2 py-0.5 rounded-full border border-green-200 bg-green-100 text-green-700 uppercase tracking-wide">Open Join</span>
+            )}
+          </h3>
           <div className="flex items-center gap-1">
             {canDelete && (
               <>
@@ -921,11 +931,27 @@ const onJoinRequest = ({ threadId, userId, username }) => {
 
         <div className="flex gap-2">
           <button
-            onClick={() => {
+            onClick={async () => {
               const isMember =
                 thread.createdBy === currentUser?.id ||
                 (thread.members || []).some((m) => m === currentUser?.id);
-              if (!isMember) {
+
+              // If open thread (no approval) and not yet a member, auto-join then open
+              if (!isMember && thread.requiresApproval === false) {
+                try {
+                  await handleJoinThread(thread.id);
+                } catch (e) {
+                  // If auto-join fails, show a brief error but still avoid opening
+                  setNotification({ show: true, type: 'error', message: 'Failed to join this thread.', duration: 2000 });
+                  return;
+                }
+              }
+
+              // For approval-required threads, block non-members and prompt to request
+              const nowMember =
+                thread.createdBy === currentUser?.id ||
+                (thread.members || []).some((m) => m === currentUser?.id);
+              if (!nowMember && thread.requiresApproval) {
                 setNotification({
                   show: true,
                   type: 'warning',
@@ -934,6 +960,7 @@ const onJoinRequest = ({ threadId, userId, username }) => {
                 });
                 return;
               }
+
               setSelectedThread(thread);
               localStorage.setItem('selectedThread', JSON.stringify(thread));
             }}
@@ -942,12 +969,12 @@ const onJoinRequest = ({ threadId, userId, username }) => {
             View Chat {thread.chat?.length > 0 && `(${thread.chat.length})`}
           </button>
 
-          {showJoinButton && canJoin && !isOwner && (
+          {showJoinButton && canJoin && !isOwner && thread.requiresApproval && (
             <button
               onClick={() => handleJoinThread(thread.id)}
               className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium"
             >
-              Join
+              Request to Join
             </button>
           )}
         </div>
@@ -958,8 +985,10 @@ const onJoinRequest = ({ threadId, userId, username }) => {
   const CreateThreadForm = () => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
+    const [tagsText, setTagsText] = useState('');
     const [location, setLocation] = useState('');
     const [duration, setDuration] = useState(60);
+    const [requiresApproval, setRequiresApproval] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleSubmit = async (e) => {
@@ -970,18 +999,29 @@ const onJoinRequest = ({ threadId, userId, username }) => {
       }
 
       setIsSubmitting(true);
+      // Parse optional tags (comma-separated)
+      const tags = tagsText
+        .split(',')
+        .map(t => t.trim())
+        .filter(Boolean)
+        .slice(0, 10);
+
       const result = await handleCreateThread({
         title: title.trim(),
         description: description.trim(),
+        tags,
         location: location.trim(),
-        duration: parseInt(duration)
+        duration: parseInt(duration),
+        requiresApproval,
       });
 
       if (result.success) {
         setTitle('');
         setDescription('');
+        setTagsText('');
         setLocation('');
         setDuration(60);
+        setRequiresApproval(true);
       }
       setIsSubmitting(false);
     };
@@ -1025,6 +1065,18 @@ const onJoinRequest = ({ threadId, userId, username }) => {
             </div>
 
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Tags (optional)</label>
+              <input
+                type="text"
+                value={tagsText}
+                onChange={(e) => setTagsText(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g. music, networking, hackathon"
+              />
+              <p className="text-xs text-gray-500 mt-1">Comma-separated. Leave blank if not needed.</p>
+            </div>
+
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Location *</label>
               <input
                 type="text"
@@ -1046,6 +1098,24 @@ const onJoinRequest = ({ threadId, userId, username }) => {
                 max="480"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
+            </div>
+
+            <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg bg-gray-50">
+              <div>
+                <div className="text-sm font-medium text-gray-800">Require approval to join</div>
+                <div className="text-xs text-gray-600">If off, anyone can join instantly.</div>
+              </div>
+              <label className="inline-flex items-center cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={requiresApproval}
+                  onChange={(e) => setRequiresApproval(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:bg-blue-600 relative transition-colors">
+                  <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${requiresApproval ? 'translate-x-5' : ''}`}></div>
+                </div>
+              </label>
             </div>
 
             <div className="flex gap-3 pt-4">
@@ -1092,9 +1162,16 @@ const onJoinRequest = ({ threadId, userId, username }) => {
     return (
       <div className="flex h-screen bg-gray-50">
         <div className="w-80 bg-white shadow-sm border-r border-gray-200">
-          <div className="p-4 border-b border-gray-200">
+            <div className="p-4 border-b border-gray-200">
             <div className="flex items-center justify-between mb-2">
-              <h2 className="font-semibold text-gray-800">{selectedThread.title}</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="font-semibold text-gray-800">{selectedThread.title}</h2>
+                {selectedThread.requiresApproval ? (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full border border-amber-200 bg-amber-100 text-amber-700 uppercase tracking-wide">Approval Required</span>
+                ) : (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full border border-green-200 bg-green-100 text-green-700 uppercase tracking-wide">Open Join</span>
+                )}
+              </div>
               <div className="flex items-center gap-2">
                 {/* {canDeleteThread && (
                   <button

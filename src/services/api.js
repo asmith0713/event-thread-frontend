@@ -58,6 +58,7 @@ export const threadsAPI = {
     creatorId: data.createdBy,
     location: data.location,
     tags: data.tags || [],
+    requiresApproval: typeof data.requiresApproval === 'boolean' ? data.requiresApproval : true,
     expiresAt: data.expiresAt,
   }),
   delete: (id, userId) => api.delete(`/threads/${id}`, { data: { userId } }),
@@ -76,4 +77,3 @@ export const adminAPI = {
 };
 
 export default api;
-
