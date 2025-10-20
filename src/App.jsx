@@ -859,25 +859,25 @@ const onJoinRequest = ({ threadId, userId, username }) => {
     const hasRequests = isOwner && thread.pendingRequests?.length > 0;
 
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="font-semibold text-gray-800 flex-1 flex items-center gap-2">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-lg hover:border-blue-200 transition-all duration-300 group">
+        <div className="flex justify-between items-start mb-3">
+          <h3 className="font-bold text-gray-900 flex-1 flex items-start flex-wrap gap-2 text-base">
             {thread.title}
             {thread.requiresApproval ? (
-              <span className="text-[10px] px-2 py-0.5 rounded-full border border-amber-200 bg-amber-100 text-amber-700 uppercase tracking-wide">Approval Required</span>
+              <span className="text-[10px] px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 font-semibold uppercase tracking-wider border border-amber-200">Approval</span>
             ) : (
-              <span className="text-[10px] px-2 py-0.5 rounded-full border border-green-200 bg-green-100 text-green-700 uppercase tracking-wide">Open Join</span>
+              <span className="text-[10px] px-2.5 py-1 rounded-full bg-green-100 text-green-700 font-semibold uppercase tracking-wider border border-green-200">Open</span>
             )}
           </h3>
           <div className="flex items-center gap-1">
             {canDelete && (
               <>
                 {currentUser?.isAdmin && !isOwner && (
-                  <span className="text-xs text-red-500 bg-red-50 px-2 py-1 rounded">Admin</span>
+                  <span className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded-md font-medium border border-red-200">Admin</span>
                 )}
                 <button
                   onClick={() => handleDeleteThread(thread.id)}
-                  className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50"
+                  className="text-red-500 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-colors"
                   title={isOwner ? "Delete your thread" : "Delete thread (Admin)"}
                 >
                   <Trash2 className="w-4 h-4" />
@@ -887,21 +887,21 @@ const onJoinRequest = ({ threadId, userId, username }) => {
           </div>
         </div>
 
-        <p className="text-gray-600 text-sm mb-3">{thread.description}</p>
+        <p className="text-gray-600 text-sm mb-4 leading-relaxed line-clamp-2">{thread.description}</p>
 
-        <div className="flex items-center gap-4 text-xs text-gray-500 mb-3">
-          <div className="flex items-center gap-1">
-            <Users className="w-3 h-3" />
-            <span>{thread.members?.length || 0}/{thread.maxMembers}</span>
+        <div className="flex items-center gap-4 text-xs text-gray-500 mb-4">
+          <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1.5 rounded-lg">
+            <Users className="w-3.5 h-3.5 text-gray-600" />
+            <span className="font-medium">{thread.members?.length || 0}/{thread.maxMembers}</span>
           </div>
-          <div className="flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            <span>{getTimeRemaining(thread.expiresAt)}</span>
+          <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1.5 rounded-lg">
+            <Clock className="w-3.5 h-3.5 text-gray-600" />
+            <span className="font-medium">{getTimeRemaining(thread.expiresAt)}</span>
           </div>
           {thread.location && (
-            <div className="flex items-center gap-1">
-              <MapPin className="w-3 h-3" />
-              <span>{thread.location}</span>
+            <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1.5 rounded-lg">
+              <MapPin className="w-3.5 h-3.5 text-gray-600" />
+              <span className="font-medium truncate max-w-[100px]">{thread.location}</span>
             </div>
           )}
         </div>
@@ -963,7 +963,7 @@ const onJoinRequest = ({ threadId, userId, username }) => {
           </div>
         )}
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 pt-2">
           <button
             onClick={async () => {
               const isMember =
@@ -1012,17 +1012,20 @@ const onJoinRequest = ({ threadId, userId, username }) => {
               setSelectedThread(thread);
               localStorage.setItem('selectedThread', JSON.stringify(thread));
             }}
-            className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium"
+            className="flex-1 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-blue-50 hover:to-blue-100 text-gray-700 hover:text-blue-700 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 border border-gray-200 hover:border-blue-300 group-hover:shadow-sm"
           >
-            View Chat {thread.chat?.length > 0 && `(${thread.chat.length})`}
+            <span className="flex items-center justify-center gap-2">
+              <MessageCircle className="w-4 h-4" />
+              Open Chat {thread.chat?.length > 0 && `(${thread.chat.length})`}
+            </span>
           </button>
 
           {showJoinButton && canJoin && !isOwner && thread.requiresApproval && (
             <button
               onClick={() => handleJoinThread(thread.id)}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium"
+              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 shadow-md shadow-blue-500/30 hover:shadow-lg hover:shadow-blue-500/40"
             >
-              Request to Join
+              Request Join
             </button>
           )}
         </div>
@@ -1075,83 +1078,83 @@ const onJoinRequest = ({ threadId, userId, username }) => {
     };
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-xl p-6 max-w-md w-full">
+      <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
+        <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl border border-gray-100 animate-slideUp">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-gray-800">Create New Thread</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Create New Thread</h2>
             <button
               onClick={() => setShowCreateForm(false)}
-              className="text-gray-500 hover:text-gray-700"
+              className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-lg transition-all"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Title</label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="Event title"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                placeholder="Enter thread title"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="Describe your event"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
+                placeholder="Describe your thread"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Tags (optional)</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Tags <span className="text-gray-400 font-normal">(optional)</span></label>
               <input
                 type="text"
                 value={tagsText}
                 onChange={(e) => setTagsText(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="e.g. music, networking, hackathon"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                placeholder="music, networking, hackathon"
               />
-              <p className="text-xs text-gray-500 mt-1">Comma-separated. Leave blank if not needed.</p>
+              <p className="text-xs text-gray-500 mt-2 ml-1">Separate tags with commas</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Location *</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Location</label>
               <input
                 type="text"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 placeholder="Event location"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Duration (minutes)</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Duration (minutes)</label>
               <input
                 type="number"
                 value={duration}
                 onChange={(e) => setDuration(e.target.value)}
                 min="15"
                 max="480"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
               />
             </div>
 
-            <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg bg-gray-50">
+            <div className="flex items-center justify-between p-4 border border-gray-200 rounded-xl bg-gray-50">
               <div>
-                <div className="text-sm font-medium text-gray-800">Require approval to join</div>
-                <div className="text-xs text-gray-600">If off, anyone can join instantly.</div>
+                <div className="text-sm font-semibold text-gray-800">Require approval to join</div>
+                <div className="text-xs text-gray-500 mt-1">Members need approval before joining</div>
               </div>
               <label className="inline-flex items-center cursor-pointer select-none">
                 <input
@@ -1160,26 +1163,26 @@ const onJoinRequest = ({ threadId, userId, username }) => {
                   onChange={(e) => setRequiresApproval(e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:bg-blue-600 relative transition-colors">
-                  <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${requiresApproval ? 'translate-x-5' : ''}`}></div>
+                <div className="w-12 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:bg-blue-600 relative transition-colors shadow-inner">
+                  <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform ${requiresApproval ? 'translate-x-6' : ''}`}></div>
                 </div>
               </label>
             </div>
 
-            <div className="flex gap-3 pt-4">
+            <div className="flex gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => setShowCreateForm(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold transition-all"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-blue-300"
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-semibold disabled:from-blue-300 disabled:to-blue-400 transition-all shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 disabled:shadow-none"
               >
-                {isSubmitting ? 'Creating...' : 'Create'}
+                {isSubmitting ? 'Creating...' : 'Create Thread'}
               </button>
             </div>
           </form>
@@ -1398,14 +1401,14 @@ const onJoinRequest = ({ threadId, userId, username }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header 
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50">
+      <Header
         currentUser={currentUser}
         onShowAdminDashboard={() => setShowAdminDashboard(true)}
         onLogout={handleLogout}
       />
 
-      <div className="max-w-6xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         <TabNavigation
           activeTab={activeTab}
           onTabChange={setActiveTab}
@@ -1413,16 +1416,22 @@ const onJoinRequest = ({ threadId, userId, username }) => {
           threads={threads}
         />
 
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">
-            {activeTab === 'my-threads' && 'My Threads'}
-            {activeTab === 'all-threads' && 'All Active Threads'}
-          </h1>
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+              {activeTab === 'my-threads' && 'My Threads'}
+              {activeTab === 'all-threads' && 'Discover Threads'}
+            </h1>
+            <p className="text-gray-600 text-sm mt-1">
+              {activeTab === 'my-threads' && 'Manage your created threads and conversations'}
+              {activeTab === 'all-threads' && 'Join conversations and connect with others'}
+            </p>
+          </div>
           <button
             onClick={() => setShowCreateForm(true)}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium"
+            className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-3 rounded-xl flex items-center gap-2 font-semibold shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-200"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-5 h-5" />
             Create Thread
           </button>
         </div>
@@ -1430,45 +1439,47 @@ const onJoinRequest = ({ threadId, userId, username }) => {
         {activeTab === 'my-threads' && (
           <div>
             {userThreads.length === 0 ? (
-              <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-                <Hash className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-800 mb-2">No threads created yet</h3>
-                <p className="text-gray-600 mb-4">Create your first thread to connect with others!</p>
+              <div className="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-100">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <Hash className="w-10 h-10 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">No threads created yet</h3>
+                <p className="text-gray-600 mb-6 max-w-md mx-auto">Create your first thread to start connecting with people who share your interests</p>
                 <button
                   onClick={() => setShowCreateForm(true)}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg"
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-200"
                 >
-                  Create Thread
+                  Create Your First Thread
                 </button>
               </div>
             ) : (
               <>
                 {/* Stats Dashboard */}
-                <div className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+                <div className="mb-8 p-6 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl shadow-lg text-white">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-8">
+                    <div className="flex items-center gap-12">
                       <div className="text-center">
-                        <div className="text-3xl font-bold text-blue-600">{userThreads.length}</div>
-                        <div className="text-sm text-blue-800 font-medium">My Threads</div>
+                        <div className="text-4xl font-bold mb-1">{userThreads.length}</div>
+                        <div className="text-sm font-medium text-blue-100">My Threads</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-3xl font-bold text-green-600">
+                        <div className="text-4xl font-bold mb-1">
                           {userThreads.reduce((total, thread) => total + (thread.members?.length || 0), 0)}
                         </div>
-                        <div className="text-sm text-green-800 font-medium">Total Members</div>
+                        <div className="text-sm font-medium text-blue-100">Total Members</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-3xl font-bold text-yellow-600">
+                        <div className="text-4xl font-bold mb-1">
                           {userThreads.reduce((total, thread) => total + (thread.pendingRequests?.length || 0), 0)}
                         </div>
-                        <div className="text-sm text-yellow-800 font-medium">Pending Requests</div>
+                        <div className="text-sm font-medium text-blue-100">Pending Requests</div>
                       </div>
                     </div>
 
                     {userThreads.some(thread => thread.pendingRequests?.length > 0) && (
-                      <div className="flex items-center gap-2 text-blue-600 bg-blue-100 px-4 py-2 rounded-lg">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                        <span className="text-sm font-medium">You have join requests to review!</span>
+                      <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2.5 rounded-xl border border-white/30">
+                        <div className="w-2 h-2 bg-yellow-300 rounded-full animate-pulse"></div>
+                        <span className="text-sm font-semibold">Review pending requests</span>
                       </div>
                     )}
                   </div>
@@ -1493,17 +1504,19 @@ const onJoinRequest = ({ threadId, userId, username }) => {
         {activeTab === 'all-threads' && (
           <div>
             {threads.length === 0 ? (
-              <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-                <Hash className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-800 mb-2">No active threads</h3>
-                <p className="text-gray-600">Be the first to create an event thread!</p>
+              <div className="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-100">
+                <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <Hash className="w-10 h-10 text-gray-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">No active threads</h3>
+                <p className="text-gray-600 max-w-md mx-auto">Be the first to create a thread and start connecting with others!</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {threads.map(thread => (
-                  <ThreadCard 
-                    key={thread.id} 
-                    thread={thread} 
+                  <ThreadCard
+                    key={thread.id}
+                    thread={thread}
                     showJoinButton={true}
                     isOwner={thread.createdBy === currentUser.id}
                   />
