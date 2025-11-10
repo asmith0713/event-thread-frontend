@@ -2,8 +2,8 @@
 
 Modern, lightweight app for creating event-based threads with realtime chat, membership approvals, and an admin view. The project is split into two repos (frontend and backend) that work together.
 
-- Frontend (Vite + React): https://github.com/your-org/event-threads-frontend
-- Backend (Node + Express + MongoDB + Socket.IO): https://github.com/your-org/event-threads-backend
+- Frontend (Vite + React): [https://github.com/asmith0713/event-threads-frontend](https://github.com/asmith0713/event-thread-frontend.git)
+- Backend (Node + Express + MongoDB + Socket.IO): [https://github.com/asmith0713/event-threads-backend](https://github.com/asmith0713/event-thread-frontend.git)
 
 Update the links above to your actual GitHub repos.
 
